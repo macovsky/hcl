@@ -181,10 +181,16 @@ module HCl
       date = args.empty? ? nil : Chronic.parse(args.join(' '))
       total_hours = 0.0
       result = ''
-      DayEntry.daily(http, date).each do |day|
+      days = DayEntry.daily(http, date)
+      last = nil
+      if !date || date == Chronic.parse("today")
+        last = days.sort {|a,b| a.updated_at<=>b.updated_at}[-1]
+      end
+      days.each do |day|
         running = day.running? ? '(running) ' : ''
+        is_last = day == last ? '(last) ' : ''
         columns = HighLine::SystemExtensions.terminal_size[0] rescue 80
-        result << "\t#{day.formatted_hours}\t#{running}#{day.project}: #{day.notes.lines.to_a.last}\n"[0..columns-1]
+        result << "\t#{day.formatted_hours}\t#{running}#{is_last}#{day.project}: #{day.notes.lines.to_a.last}\n"[0..columns-1]
         total_hours = total_hours + day.hours.to_f
       end
       result << ("\t" + '-' * 13) << "\n"
