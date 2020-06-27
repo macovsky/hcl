@@ -28,12 +28,21 @@ module HCl
       super || @data[:notes] = ''
     end
 
+    def notes=(v)
+      @data[:notes] = v
+    end
+
     # Append a string to the notes for this task.
     def append_note http, new_notes
       # If I don't include hours it gets reset.
       # This doens't appear to be the case for task and project.
       (self.notes << "\n#{new_notes}").lstrip!
       http.post "daily/update/#{id}", notes:notes, hours:hours
+    end
+
+    def update_notes http, new_notes
+      self.notes = new_notes
+      http.post "daily/update/#{id}", notes: notes, hours: hours
     end
 
     def self.with_timer http, date=nil
@@ -47,6 +56,12 @@ module HCl
 
     def self.last http
       today(http).sort {|a,b| a.updated_at<=>b.updated_at}[-1]
+    end
+
+    def self.for_update_note http
+      entries = daily(http, nil)
+
+      entries.find {|t| t.running? } || entries.sort {|a,b| a.updated_at<=>b.updated_at}[-1]
     end
 
     def running?

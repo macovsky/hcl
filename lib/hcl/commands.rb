@@ -177,6 +177,23 @@ module HCl
       end
     end
 
+    def edit_notes *args
+      if entry = DayEntry.for_update_note(http)
+        notes = if args.any?
+          args.join(' ')
+        else
+          tmpfname = "/tmp/.hcl-#{entry.id}"
+          File.write(tmpfname, entry.notes)
+          system("${EDITOR:-vi} #{tmpfname}")
+          File.read(tmpfname)
+        end
+        entry.update_notes(http, notes)
+        "Updated notes on #{entry}."
+      else
+        fail "Nothing can be updated."
+      end
+    end
+
     def show *args
       date = args.empty? ? nil : Chronic.parse(args.join(' '))
       total_hours = 0.0
